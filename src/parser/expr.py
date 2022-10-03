@@ -15,6 +15,14 @@ class Expr:
         self.type = type
 
 
+    def is_literal(self) -> bool:
+        return self.type == Expr.Type.Literal
+
+
+    def is_valid(self) -> bool:
+        return self.type != Expr.Type.Invalid
+
+
 class BinaryExpr(Expr):
     def __init__(self, lhs: Expr, op: Token, rhs: Expr) -> None:
         super().__init__(Expr.Type.Binary)

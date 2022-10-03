@@ -29,5 +29,5 @@ class Token:
 
         if self.data != '':
             s += ', data: ' + self.data
-        
+
         return s

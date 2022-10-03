@@ -13,7 +13,7 @@ class Lexer:
     def peek(self) -> str:
         if self.current == len(self.str): return ''
         return self.str[self.current + 1]
-    
+
 
     def consume(self) -> str:
         ch = self.str[self.current]
@@ -42,7 +42,7 @@ class Lexer:
             i += 1
             if (i == str_len):
                 break
-        
+
         self.current += i - start
         tok: Token = Token(TokenKind.Identifier)
         tok.set_data(self.str[start:i])
@@ -115,6 +115,5 @@ class Lexer:
                     self.tokens.append(
                         Token(TokenKind.Op_Exclaim))
                     self.current += 1
-                    
 
         self.tokens.append(Token(TokenKind.End))
