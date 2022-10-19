@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
-from lex.lexer import Lexer
-from parser.expr import Expr
+from asttypes.expr import Expr
+
+from lexer.lexer import Lexer
 from parser.parser import Parser
 
 
@@ -21,21 +22,18 @@ def main():
         with open(filename, 'r') as file:
             data = file.read()
     except Exception as e:
-        print(f"Failed to open '{filename}': {e.args[1]}!")
+        print(f"Failed to open {filename}: {e.args[1]}!")
         sys.exit(e.args[0])
 
     # lexer invoking
     lexer: Lexer = Lexer(data)
     lexer.lex()
 
-    for token in lexer.tokens:
-        print(token)
-
-    return
-
     # parser invoking
     parser: Parser = Parser(lexer.tokens)
-    expr: Expr = parser.parse()
+    expr: Expr | None = parser.parse() # type: ignore
+
+    print("Done")
 
 
 if __name__ == '__main__':

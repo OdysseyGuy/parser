@@ -1,0 +1,3 @@
+func find_object(event) {
+    let a = 5
+}

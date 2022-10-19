@@ -1,0 +1,2 @@
+class LangOpts:
+    pass
