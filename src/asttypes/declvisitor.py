@@ -9,10 +9,9 @@ T = TypeVar('T')
 
 class DeclVisitor(ABC, Generic[T]):
     @abstractmethod
-    def visit_let(self, let: decl.LetDecl) -> T:
+    def visit_let(self, let_decl: decl.LetDecl) -> T:
         raise NotImplementedError()
 
-
     @abstractmethod
-    def visit_func(self, func: decl.FuncDecl) -> T:
+    def visit_func(self, func_decl: decl.FuncDecl) -> T:
         raise NotImplementedError()

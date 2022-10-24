@@ -31,6 +31,8 @@ class UnaryOp(enum.Enum):
 
 
 def token_to_binaryop(token: Token) -> BinaryOp:
+    """Converts a token to binary operator."""
+
     if token.is_kind(TokenKind.Op_Plus):
         return BinaryOp.Add
     elif token.is_kind(TokenKind.Op_Minus):
@@ -56,6 +58,8 @@ def token_to_binaryop(token: Token) -> BinaryOp:
 
 
 def token_to_unaryop(token: Token) -> UnaryOp:
+    """Converts a token to unary operator."""
+
     if token.is_kind(TokenKind.Op_Minus):
         return UnaryOp.Negate
     elif token.is_kind(TokenKind.Op_Exclaim):

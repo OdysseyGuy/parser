@@ -8,6 +8,8 @@ from lexer.token import Token
 
 
 class Expr(ASTNode, ABC):
+    """Base class for all types of expressions."""
+
     class Type(enum.Enum):
         Invalid     = enum.auto()
         Assign      = enum.auto()
@@ -17,7 +19,6 @@ class Expr(ASTNode, ABC):
         Literal     = enum.auto()
         Group       = enum.auto()
         Variable    = enum.auto()
-
 
     def __init__(self, type: Type) -> None:
         self.type = type

@@ -1,4 +1,7 @@
+"""Contains the parser implementation."""
+
 from __future__ import annotations
+from asttypes.astnode import ASTNode
 
 from asttypes.expr import (
     AssignExpr,
@@ -15,11 +18,18 @@ from asttypes.paramlist import ParamList
 from asttypes.stmt import (
     BlockStmt,
     IfStmt,
+    ReturnStmt,
     Stmt,
     ExprStmt,
     WhileStmt
 )
-from asttypes.decl import Decl, FuncDecl, LetDecl
+from asttypes.decl import (
+    ClassDecl,
+    Decl,
+    FuncDecl,
+    InvalidDecl,
+    LetDecl
+)
 
 from core.ops import BinaryOp, UnaryOp, token_to_binaryop, token_to_unaryop
 from core.tokenkind import TokenKind
@@ -27,92 +37,68 @@ from core.tokenkind import TokenKind
 from lexer.token import Token
 
 
-'''
-Expression Grammar (without left-recursion)
--------------------------------------------
-expression      -> assignment
-assingment      -> IDENTIFIER '=' assignment | logicalOr
-logicalOr       -> logicalAnd ('or' logicalAnd)*
-logicalAnd      -> equality ('and' equality)*
-equality        -> comparison (('==' | '!=') comparison)*
-comparison      -> term (('<' | '<=' | '>' | '>=') term)*
-term            -> factor (('+' | '-') factor)*
-factor          -> unary (('/' | '*') unary)*
-unary           -> ('-') unary | call
-call            -> primary ('(' arguments? ')')+
-arguments       -> expression (',' expression)*
-primary         -> LITERAL | IDENTIFIER | '(' expression ')'
-
-Statements and Declarations Grammar
-------------------
-program         -> decl End
-decl            -> letDecl | funcDecl | stmt
-stmt            -> exprStmt | ifStmt | whileStmt | brace
-brace           -> '{' decl* '}'
-
-letDecl         -> 'let' IDENTIFIER ('=' expression)?
-funcDecl        -> "func" IDENTIFIER '=' '(' parameters? ')' brace
-parameters      -> IDENTIFIER (',' IDENTIFIER)*
-
-ifStmt          -> 'if' '(' expression ')' stmt
-                   ('else' stmt)?
-whileStmt       -> 'while' '(' expression ')' stmt
-'''
-
-
 class Parser:
     def __init__(self, tokens: list[Token]) -> None:
+        """Creates a parser object.
+
+        Args:
+            tokens: List of tokens from the lexer.
+        """
         self.tokens: list[Token] = tokens
         self.current: int = 0
 
-
     def peek(self) -> Token:
+        """Returns the current token before it is consumed."""
         return self.tokens[self.current]
 
-
     def previous(self) -> Token:
+        """Returns the previously consumed token."""
         return self.tokens[self.current - 1]
-
 
     def is_at_end(self) -> bool:
         return self.peek().is_kind(TokenKind.End)
 
-
     def consume(self) -> Token:
+        """Advances to the next token in the list. Returns the currently
+        consumed token.
+        """
         if not self.is_at_end():
             self.current += 1
         return self.previous()
 
-
     def must_consume(self, kind: TokenKind, message: str):
+        """Consume the given kind of token and if current token is not of
+        that kind then raise an error exception.
+        """
         if self.check(kind):
             return self.consume()
         else:
             raise Exception(message)
 
-
     def check(self, kind: TokenKind) -> bool:
-        if self.is_at_end(): return False
+        """Check if current token is of specified kind."""
         return self.peek().is_kind(kind)
 
-
     def match(self, *kinds: TokenKind) -> bool:
+        """Checks if current token is of specified kind. If it is
+        then it consumes the token and returns true else returns false.
+
+        Use `previous()` method to get the consumed token.
+        """
         if self.peek().is_any(*kinds):
             self.consume()
             return True
         return False
 
-
-    # ----------------------- Expressions -----------------------
+    # ------------------------------ Expressions ------------------------------
     def parse_expr(self) -> Expr:
         return self.parse_assignment_expr()
-
 
     def parse_assignment_expr(self) -> Expr:
         expr = self.parse_logical_or()
 
-        # TODO: Implement assignment
         if self.match(TokenKind.Op_Equal):
+            # TODO: Implement assignment
             value: Expr = self.parse_assignment_expr()
 
             # Check if the left hand expression is a valid l-value
@@ -125,7 +111,6 @@ class Parser:
 
         return expr
 
-
     def parse_logical_or(self) -> Expr:
         expr = self.parse_logical_and()
 
@@ -134,7 +119,6 @@ class Parser:
             expr = BinaryExpr(expr, BinaryOp.Or, right)
 
         return expr
-
 
     def parse_logical_and(self) -> Expr:
         expr = self.parse_equality_expr()
@@ -145,7 +129,6 @@ class Parser:
 
         return expr
 
-
     def parse_equality_expr(self) -> Expr:
         expr = self.parse_comparison_expr()
 
@@ -155,7 +138,6 @@ class Parser:
             expr = BinaryExpr(expr, op, right)
 
         return expr
-
 
     def parse_comparison_expr(self) -> Expr:
         expr = self.parse_term_expr()
@@ -168,7 +150,6 @@ class Parser:
 
         return expr
 
-
     def parse_term_expr(self) -> Expr:
         expr = self.parse_factor_expr()
 
@@ -178,7 +159,6 @@ class Parser:
             expr = BinaryExpr(expr, op, right)
 
         return expr
-
 
     def parse_factor_expr(self) -> Expr:
         expr = self.parse_unary_expr()
@@ -190,7 +170,6 @@ class Parser:
 
         return expr
 
-
     def parse_unary_expr(self) -> Expr:
         if self.match(TokenKind.Op_Minus, TokenKind.Op_Exclaim):
             op: UnaryOp = token_to_unaryop(self.previous())
@@ -198,7 +177,6 @@ class Parser:
             return UnaryExpr(op, expr)
 
         return self.parse_call_expr()
-
 
     def parse_call_expr(self) -> Expr:
         expr = self.parse_primary_expr()
@@ -212,7 +190,6 @@ class Parser:
 
         return expr
 
-
     def parse_call_expr_args(self) -> list[Expr]:
         args: list[Expr] = []
 
@@ -222,7 +199,6 @@ class Parser:
                 args.append(self.parse_expr())
 
         return args
-
 
     def parse_primary_expr(self) -> Expr:
         if self.match(TokenKind.Number):
@@ -238,15 +214,18 @@ class Parser:
 
         return InvalidExpr()
 
-
-    # ----------------------- Declarations -----------------------
-    def parse_decl(self) -> Decl | Stmt:
+    # ------------------------------ Declarations ------------------------------
+    def parse_decl(self) -> Decl:
         if self.match(TokenKind.Kw_let):
             return self.parse_let_decl()
+
         if self.match(TokenKind.Kw_func):
             return self.parse_func_decl()
-        return self.parse_stmt()
 
+        if self.match(TokenKind.Kw_class):
+            return self.parse_class_decl()
+
+        return InvalidDecl()
 
     def parse_let_decl(self) -> Decl:
         name: Token = self.must_consume(TokenKind.Identifier, "Expected an identifier.")
@@ -257,7 +236,6 @@ class Parser:
 
         return LetDecl(name, initializer)
 
-
     def parse_func_decl(self) -> Decl:
         # TODO: Should be force require brace statement as the function body?
         name: Token = self.must_consume(TokenKind.Identifier, "Expected an identifier.")
@@ -266,11 +244,10 @@ class Parser:
         params: ParamList = self.parse_func_parameters()
         self.must_consume(TokenKind.Op_RParen, "Expected ')' after parameter.")
 
-        self.must_consume(TokenKind.Op_RBrace, "Expected a '{' before function body.")
+        self.must_consume(TokenKind.Op_LBrace, "Expected a '{' before function body.")
         body: Stmt = self.parse_block_stmt()
 
         return FuncDecl(name, params, body)
-
 
     def parse_func_parameters(self) -> ParamList:
         args: ParamList = ParamList([])
@@ -282,9 +259,33 @@ class Parser:
 
         return args
 
+    def parse_class_decl(self) -> ClassDecl:
+        name: Token = self.must_consume(TokenKind.Identifier, "Expected an identifier as class name.")
 
-    # ----------------------- Statements -----------------------
+        # Inheritance list?
+        inheritance_list: list[Token] = []
+        if self.check(TokenKind.Op_Colon):
+            self.consume()
+            inheritance_list = self.parse_inheritance_list()
+
+        self.must_consume(TokenKind.Op_LBrace, "Expected '{' before class body.")
+        block_stmt: BlockStmt = self.parse_block_stmt()
+
+        return ClassDecl(name, inheritance_list)
+
+    def parse_inheritance_list(self) -> list[Token]:
+        inherited: list[Token] = []
+        inherited.append(self.must_consume(TokenKind.Identifier, ""))
+
+        return inherited
+
+    # ------------------------------ Statements ------------------------------
     def parse_stmt(self) -> Stmt:
+        """statement:
+            block-statement |
+            if-statement |
+            while-statement;
+        """
         if self.match(TokenKind.Op_LBrace):
             return self.parse_block_stmt()
 
@@ -294,10 +295,16 @@ class Parser:
         if self.match(TokenKind.Kw_while):
             return self.parse_while_stmt()
 
+        if self.match(TokenKind.Kw_return):
+            return self.parse_return_stmt()
+
         return self.parse_expr_stmt()
 
-
     def parse_if_stmt(self) -> IfStmt:
+        """if-statement:
+            'if' '(' expression ')' block
+            'else' block
+        """
         # TODO: Implement if-else-if-else
         self.must_consume(TokenKind.Op_LParen, "Expected '(' after 'if'.")
         condition: Expr = self.parse_expr()
@@ -316,35 +323,42 @@ class Parser:
 
         return IfStmt(condition, thenbranch, elsebranch)
 
-
     def parse_while_stmt(self) -> WhileStmt:
+        """while-statement:
+            'while' '(' expression ')' block
+        """
+        # parse condition
         self.must_consume(TokenKind.Op_LParen, "Expected '(' after 'while'.")
         condition: Expr = self.parse_expr()
         self.must_consume(TokenKind.Op_RParen, "Expected ')' after while condition.")
+
+        # parse body
         body: Stmt = self.parse_stmt()
         return WhileStmt(condition, body)
 
+    def parse_return_stmt(self) -> ReturnStmt:
+        # TODO: Check if there is an expression
+        expr: Expr = self.parse_expr()
+        return ReturnStmt(expr, None)
 
     def parse_block_stmt(self) -> BlockStmt:
-        stmts: list[Decl | Stmt] = []
+        elems: list[ASTNode] = []
 
         while not self.check(TokenKind.Op_RBrace) and not self.is_at_end():
-            decl: Decl | Stmt = self.parse_decl()
-            stmts.append(decl)
+            decl: ASTNode = self.parse_decl()
+            elems.append(decl)
 
         self.must_consume(TokenKind.Op_RBrace, "Expected '}' after block.")
-        return BlockStmt(stmts)
-
+        return BlockStmt(elems)
 
     def parse_expr_stmt(self):
         expr = self.parse_expr()
         return ExprStmt(expr)
 
-
     def parse(self):
-#        stmts: list[Decl] = []
-#        while not self.is_at_end():
-#            stmts.append(self.decl())
+        stmts: list[Decl] = []
+        while not self.is_at_end():
+            stmts.append(self.parse_decl())
 
         try:
             return self.parse_expr()

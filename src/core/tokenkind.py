@@ -7,7 +7,7 @@ class TokenKind(enum.Enum):
     Number          = enum.auto()
     Identifier      = enum.auto()
 
-    # ------------ Operators ------------
+    # -------- Operators --------
     Op_Plus         = enum.auto()
     Op_Minus        = enum.auto()
     Op_Star         = enum.auto()
@@ -25,9 +25,11 @@ class TokenKind(enum.Enum):
     Op_Less         = enum.auto()
     Op_LessEqual    = enum.auto()
     Op_Comma        = enum.auto()
+    Op_Colon        = enum.auto()
 
-    # ------------ Keywords ------------
+    # -------- Keywords --------
     Kw_let          = enum.auto()
+    Kw_func         = enum.auto()
     Kw_const        = enum.auto()
     Kw_and          = enum.auto()
     Kw_or           = enum.auto()
@@ -35,4 +37,7 @@ class TokenKind(enum.Enum):
     Kw_if           = enum.auto()
     Kw_else         = enum.auto()
     Kw_while        = enum.auto()
-    Kw_func         = enum.auto()
+    Kw_return       = enum.auto()
+    Kw_class        = enum.auto()
+    Kw_interface    = enum.auto()
+    Kw_self         = enum.auto()

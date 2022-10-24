@@ -11,20 +11,18 @@ class Lexer:
         self.tokens: list[Token] = []
         self.current: int = 0
 
-
     def peek(self) -> str:
         if self.current == len(self.str):
             return ''
         return self.str[self.current + 1]
-
 
     def consume(self) -> str:
         ch = self.str[self.current]
         self.current += 1
         return ch
 
-
     def lex_number(self, start: int) -> None:
+        """Lex a number literal."""
         str_len: int = len(self.str)
 
         i: int = start
@@ -40,8 +38,8 @@ class Lexer:
 
         self.tokens.append(tok)
 
-
     def lex_identifier(self, start: int) -> None:
+        """Lex a identifier."""
         str_len: int = len(self.str)
 
         i: int = start
@@ -64,9 +62,8 @@ class Lexer:
 
         self.tokens.append(tok)
 
-
-    # Main lexer loop
     def lex(self) -> None:
+        """Main lexer loop."""
         str_len: int = len(self.str)
 
         while (self.current < str_len):
@@ -90,80 +87,66 @@ class Lexer:
 
             # Operators
             elif c == '+':
-                self.tokens.append(
-                    Token(TokenKind.Op_Plus))
+                self.tokens.append(Token(TokenKind.Op_Plus))
                 self.current += 1
             elif c == '-':
-                self.tokens.append(
-                    Token(TokenKind.Op_Minus))
+                self.tokens.append(Token(TokenKind.Op_Minus))
                 self.current += 1
             elif c == '*':
-                self.tokens.append(
-                    Token(TokenKind.Op_Star))
+                self.tokens.append(Token(TokenKind.Op_Star))
                 self.current += 1
             elif c == '/':
-                self.tokens.append(
-                    Token(TokenKind.Op_Slash))
+                self.tokens.append(Token(TokenKind.Op_Slash))
                 self.current += 1
             elif c == '{':
-                self.tokens.append(
-                    Token(TokenKind.Op_LBrace))
+                self.tokens.append(Token(TokenKind.Op_LBrace))
                 self.current += 1
             elif c == '}':
-                self.tokens.append(
-                    Token(TokenKind.Op_RBrace))
+                self.tokens.append(Token(TokenKind.Op_RBrace))
                 self.current += 1
             elif c == '(':
-                self.tokens.append(
-                    Token(TokenKind.Op_LParen))
+                self.tokens.append(Token(TokenKind.Op_LParen))
                 self.current += 1
             elif c == ')':
-                self.tokens.append(
-                    Token(TokenKind.Op_RParen))
+                self.tokens.append(Token(TokenKind.Op_RParen))
                 self.current += 1
             elif c == '=':
                 ch = self.peek()
                 if ch == '=':
-                    self.tokens.append(
-                        Token(TokenKind.Op_EqualEqual))
+                    self.tokens.append(Token(TokenKind.Op_EqualEqual))
                     self.current += 2
                 else:
-                    self.tokens.append(
-                        Token(TokenKind.Op_Equal))
+                    self.tokens.append(Token(TokenKind.Op_Equal))
                     self.current += 1
             elif c == '!':
                 ch = self.peek()
                 if ch == '=':
-                    self.tokens.append(
-                        Token(TokenKind.Op_ExclaimEqual))
+                    self.tokens.append(Token(TokenKind.Op_ExclaimEqual))
                     self.current += 2
                 else:
-                    self.tokens.append(
-                        Token(TokenKind.Op_Exclaim))
+                    self.tokens.append(Token(TokenKind.Op_Exclaim))
                     self.current += 1
             elif c == '<':
                 ch = self.peek()
                 if ch == '=':
-                    self.tokens.append(
-                        Token(TokenKind.Op_LessEqual))
+                    self.tokens.append(Token(TokenKind.Op_LessEqual))
                     self.current += 2
                 else:
-                    self.tokens.append(
-                        Token(TokenKind.Op_Less))
+                    self.tokens.append(Token(TokenKind.Op_Less))
                     self.current += 1
             elif c == '>':
                 ch = self.peek()
                 if ch == '=':
-                    self.tokens.append(
-                        Token(TokenKind.Op_GreaterEqual))
+                    self.tokens.append(Token(TokenKind.Op_GreaterEqual))
                     self.current += 2
                 else:
-                    self.tokens.append(
-                        Token(TokenKind.Op_Greater))
+                    self.tokens.append(Token(TokenKind.Op_Greater))
                     self.current += 1
             elif c == ',':
-                self.tokens.append(
-                    Token(TokenKind.Op_Comma))
+                self.tokens.append(Token(TokenKind.Op_Comma))
+                self.current += 1
+            elif c == ':':
+                self.tokens.append(Token(TokenKind.Op_Colon))
                 self.current += 1
 
         self.tokens.append(Token(TokenKind.End))
